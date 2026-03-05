@@ -38,6 +38,7 @@ async def lifespan(app: FastAPI):
     Lifecycle manager for the FastAPI app.
 
     On startup:
+    - Load legacy debates from outputs/ directory
     - Start background cleanup task for old jobs
 
     On shutdown:
@@ -45,6 +46,12 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     import asyncio
+    from backend.services.import_legacy import load_legacy_debates_on_startup
+
+    # Load historical debates from outputs/
+    print("Loading legacy debates from outputs/ directory...")
+    await load_legacy_debates_on_startup()
+
     cleanup_task = asyncio.create_task(start_cleanup_task())
 
     yield
