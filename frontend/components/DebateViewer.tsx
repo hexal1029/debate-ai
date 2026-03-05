@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useRef, useEffect } from 'react';
+import React from 'react';
 import { Download } from 'lucide-react';
 import { useDebateStream } from '@/hooks/useDebateStream';
 import { MessageBubble } from './MessageBubble';
@@ -17,30 +17,31 @@ interface DebateViewerProps {
 }
 
 export function DebateViewer({ debateId, initialData }: DebateViewerProps) {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  // Check if debate is already completed
+  const isCompleted = initialData?.status === 'completed';
 
-  const { status, messages, currentProgress, error } = useDebateStream({
+  // Only use SSE stream for non-completed debates
+  const { status, messages: streamMessages, currentProgress, error } = useDebateStream({
     debateId,
   });
 
-  // Auto-scroll to latest message
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  // Use initial messages if debate is completed, otherwise use stream messages
+  const messages = isCompleted ? (initialData?.messages || []) : streamMessages;
+  const displayStatus = isCompleted ? 'completed' : status;
 
   const handleExport = () => {
     const markdown = debateToMarkdown({
       parameters: initialData?.parameters || {},
       messages,
       created_at: initialData?.created_at || new Date().toISOString(),
-      completed_at: status === 'completed' ? new Date().toISOString() : undefined,
+      completed_at: displayStatus === 'completed' ? (initialData?.completed_at || new Date().toISOString()) : undefined,
     });
 
     const filename = `debate_${debateId}_${Date.now()}.md`;
     downloadText(markdown, filename);
   };
 
-  const isLoading = status === 'connecting' || status === 'connected';
+  const isLoading = !isCompleted && (status === 'connecting' || status === 'connected');
 
   return (
     <div className="flex flex-col h-full">
@@ -57,11 +58,10 @@ export function DebateViewer({ debateId, initialData }: DebateViewerProps) {
           {messages.map((message, index) => (
             <MessageBubble key={index} message={message} index={index} />
           ))}
-          <div ref={messagesEndRef} />
         </div>
       </div>
 
-      {status === 'completed' && messages.length > 0 && (
+      {displayStatus === 'completed' && messages.length > 0 && (
         <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 mt-6">
           <button
             onClick={handleExport}

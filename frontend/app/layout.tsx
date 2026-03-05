@@ -21,28 +21,13 @@ export default function RootLayout({
         <div className="min-h-screen bg-gray-50">
           <nav className="bg-white border-b border-gray-200">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center h-16">
+              <div className="flex justify-center items-center h-16">
                 <Link href="/" className="flex items-center gap-2">
                   <span className="text-2xl">🎭</span>
                   <span className="text-xl font-bold text-gray-900">
                     AI 历史人物辩论
                   </span>
                 </Link>
-
-                <div className="flex items-center gap-4">
-                  <Link
-                    href="/"
-                    className="text-gray-600 hover:text-gray-900 font-medium"
-                  >
-                    辩论列表
-                  </Link>
-                  <Link
-                    href="/create"
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 font-medium"
-                  >
-                    创建辩论
-                  </Link>
-                </div>
               </div>
             </div>
           </nav>
