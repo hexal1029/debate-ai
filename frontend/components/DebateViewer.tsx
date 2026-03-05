@@ -48,7 +48,7 @@ export function DebateViewer({ debateId, initialData }: DebateViewerProps) {
       <ProgressIndicator progress={currentProgress} isActive={isLoading} />
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 px-6 py-4 rounded-lg mb-6">
+        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-6 py-4 rounded-lg mb-6">
           <strong>错误:</strong> {error}
         </div>
       )}
@@ -62,10 +62,10 @@ export function DebateViewer({ debateId, initialData }: DebateViewerProps) {
       </div>
 
       {displayStatus === 'completed' && messages.length > 0 && (
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 mt-6">
+        <div className="sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 mt-6">
           <button
             onClick={handleExport}
-            className="w-full md:w-auto bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+            className="w-full md:w-auto bg-green-600 dark:bg-green-700 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 dark:hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
           >
             <Download className="h-4 w-4" />
             导出为 Markdown

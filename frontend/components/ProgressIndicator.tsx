@@ -18,21 +18,21 @@ export function ProgressIndicator({ progress, isActive }: ProgressIndicatorProps
   }
 
   return (
-    <div className="sticky top-0 z-10 bg-blue-50 border-b border-blue-200 px-6 py-4">
+    <div className="sticky top-0 z-10 bg-blue-50 dark:bg-blue-900/30 border-b border-blue-200 dark:border-blue-800 px-6 py-4">
       <div className="flex items-center gap-3">
-        <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+        <Loader2 className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-blue-900">
+            <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
               {progress.step}
             </span>
-            <span className="text-sm text-blue-700">
+            <span className="text-sm text-blue-700 dark:text-blue-300">
               {progress.message}
             </span>
           </div>
-          <div className="mt-2 h-1.5 w-full bg-blue-200 rounded-full overflow-hidden">
+          <div className="mt-2 h-1.5 w-full bg-blue-200 dark:bg-blue-800 rounded-full overflow-hidden">
             <div
-              className="h-full bg-blue-600 transition-all duration-500 rounded-full"
+              className="h-full bg-blue-600 dark:bg-blue-500 transition-all duration-500 rounded-full"
               style={{
                 width: `${calculateProgress(progress.step)}%`,
               }}

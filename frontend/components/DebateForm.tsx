@@ -58,7 +58,7 @@ export function DebateForm() {
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Person 1 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           辩论者 1
         </label>
         <input
@@ -67,13 +67,13 @@ export function DebateForm() {
           value={formData.p1}
           onChange={(e) => setFormData({ ...formData, p1: e.target.value })}
           placeholder="如：牛顿"
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500"
         />
       </div>
 
       {/* Person 2 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           辩论者 2
         </label>
         <input
@@ -82,13 +82,13 @@ export function DebateForm() {
           value={formData.p2}
           onChange={(e) => setFormData({ ...formData, p2: e.target.value })}
           placeholder="如：莱布尼茨"
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500"
         />
       </div>
 
       {/* Topic */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           辩论话题
         </label>
         <input
@@ -97,13 +97,13 @@ export function DebateForm() {
           value={formData.topic}
           onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
           placeholder="如：微积分的发明权"
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500"
         />
       </div>
 
       {/* Style */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           辩论风格
         </label>
         <div className="grid grid-cols-2 gap-3">
@@ -114,20 +114,20 @@ export function DebateForm() {
               onClick={() => setFormData({ ...formData, style: style.name as DebateStyle, rounds: style.default_rounds })}
               className={`p-4 border-2 rounded-lg text-left transition-all ${
                 formData.style === style.name
-                  ? 'border-indigo-500 bg-indigo-50'
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-indigo-500 dark:border-indigo-400 bg-indigo-50 dark:bg-indigo-900/30'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
               }`}
             >
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-2xl">{STYLE_EMOJIS[style.name as DebateStyle]}</span>
-                <span className="font-medium text-sm">{style.description.split(' - ')[0]}</span>
+                <span className="font-medium text-sm text-gray-900 dark:text-gray-100">{style.description.split(' - ')[0]}</span>
               </div>
-              <p className="text-xs text-gray-600">{style.word_limit}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">{style.word_limit}</p>
             </button>
           ))}
         </div>
         {selectedStyle && (
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             推荐轮数: {selectedStyle.default_rounds}轮 · {selectedStyle.word_limit}
           </p>
         )}
@@ -138,15 +138,15 @@ export function DebateForm() {
         <button
           type="button"
           onClick={() => setShowAdvanced(!showAdvanced)}
-          className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+          className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
         >
           {showAdvanced ? '隐藏' : '显示'}高级选项
         </button>
 
         {showAdvanced && (
-          <div className="mt-4 space-y-4 p-4 bg-gray-50 rounded-lg">
+          <div className="mt-4 space-y-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 辩论轮数
               </label>
               <input
@@ -155,18 +155,18 @@ export function DebateForm() {
                 max="20"
                 value={formData.rounds}
                 onChange={(e) => setFormData({ ...formData, rounds: parseInt(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 语言风格
               </label>
               <select
                 value={formData.language_style}
                 onChange={(e) => setFormData({ ...formData, language_style: e.target.value as LanguageStyle })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg"
               >
                 <option value="现代口语">现代口语</option>
                 <option value="半文半白">半文半白</option>
@@ -175,7 +175,7 @@ export function DebateForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 字数限制（可选）
               </label>
               <input
@@ -185,7 +185,7 @@ export function DebateForm() {
                 value={formData.word_limit || ''}
                 onChange={(e) => setFormData({ ...formData, word_limit: e.target.value ? parseInt(e.target.value) : undefined })}
                 placeholder="留空使用默认值"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg placeholder-gray-400 dark:placeholder-gray-500"
               />
             </div>
           </div>
@@ -196,7 +196,7 @@ export function DebateForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+        className="w-full bg-indigo-600 dark:bg-indigo-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-indigo-700 dark:hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
       >
         {loading ? (
           <>

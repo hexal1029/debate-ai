@@ -51,18 +51,18 @@ export function MessageBubble({ message, index }: MessageBubbleProps) {
         </div>
         <button
           onClick={handleCopy}
-          className="p-2 hover:bg-white/50 rounded-md transition-colors"
+          className="p-2 hover:bg-white/50 dark:hover:bg-gray-700/50 rounded-md transition-colors"
           title="复制内容"
         >
           {copied ? (
-            <Check className="h-4 w-4 text-green-600" />
+            <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
           ) : (
-            <Copy className="h-4 w-4" />
+            <Copy className="h-4 w-4 text-gray-600 dark:text-gray-400" />
           )}
         </button>
       </div>
 
-      <div className="prose prose-sm max-w-none">
+      <div className="prose prose-sm max-w-none prose-headings:text-inherit prose-p:text-inherit prose-strong:text-inherit prose-em:text-inherit">
         <ReactMarkdown
           components={{
             p: ({ children }) => <p className="mb-3 leading-relaxed">{children}</p>,

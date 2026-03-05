@@ -61,15 +61,15 @@ export function formatRelativeTime(dateString: string): string {
 export function getRoleColor(role: string): string {
   switch (role) {
     case 'moderator':
-      return 'bg-moderator/10 border-moderator text-moderator-dark';
+      return 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700 text-gray-900 dark:text-gray-100';
     case 'character1':
-      return 'bg-character1/10 border-character1 text-character1-dark';
+      return 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-gray-900 dark:text-gray-100';
     case 'character2':
-      return 'bg-character2/10 border-character2 text-character2-dark';
+      return 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700 text-gray-900 dark:text-gray-100';
     case 'both':
-      return 'bg-gradient-to-r from-character1/10 to-character2/10 border-character1';
+      return 'bg-gradient-to-r from-green-50 to-amber-50 dark:from-green-900/20 dark:to-amber-900/20 border-green-300 dark:border-green-700 text-gray-900 dark:text-gray-100';
     default:
-      return 'bg-gray-100 border-gray-300';
+      return 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100';
   }
 }
 
@@ -88,42 +88,6 @@ export function getRoleEmoji(role: string): string {
       return '🎭';
     default:
       return '💬';
-  }
-}
-
-/**
- * Get status badge color
- */
-export function getStatusColor(status: string): string {
-  switch (status) {
-    case 'pending':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-    case 'running':
-      return 'bg-blue-100 text-blue-800 border-blue-300';
-    case 'completed':
-      return 'bg-green-100 text-green-800 border-green-300';
-    case 'failed':
-      return 'bg-red-100 text-red-800 border-red-300';
-    default:
-      return 'bg-gray-100 text-gray-800 border-gray-300';
-  }
-}
-
-/**
- * Get status text in Chinese
- */
-export function getStatusText(status: string): string {
-  switch (status) {
-    case 'pending':
-      return '等待中';
-    case 'running':
-      return '进行中';
-    case 'completed':
-      return '已完成';
-    case 'failed':
-      return '失败';
-    default:
-      return status;
   }
 }
 
