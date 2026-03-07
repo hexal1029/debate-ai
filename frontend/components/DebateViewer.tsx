@@ -21,7 +21,7 @@ export function DebateViewer({ debateId, initialData }: DebateViewerProps) {
   const isCompleted = initialData?.status === 'completed';
 
   // Only use SSE stream for non-completed debates
-  const { status, messages: streamMessages, currentProgress, error } = useDebateStream({
+  const { status, messages: streamMessages, streamingMessage, currentProgress, error } = useDebateStream({
     debateId,
   });
 
@@ -58,6 +58,20 @@ export function DebateViewer({ debateId, initialData }: DebateViewerProps) {
           {messages.map((message, index) => (
             <MessageBubble key={index} message={message} index={index} />
           ))}
+
+          {/* Currently streaming message */}
+          {streamingMessage && !isCompleted && (
+            <MessageBubble
+              key="streaming"
+              message={{
+                speaker: streamingMessage.speaker,
+                role: streamingMessage.role as any,
+                content: streamingMessage.content,
+              }}
+              index={messages.length}
+              isStreaming={true}
+            />
+          )}
         </div>
       </div>
 

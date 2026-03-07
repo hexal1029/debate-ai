@@ -25,8 +25,8 @@ from src.character_builder import CharacterBuilder
 from src.debate_engine import DebateEngine, DebateMessage as SrcDebateMessage
 from src.style_config import get_style_config, create_custom_style_config
 
-from backend.models import DebateMessage, DebateStatus
-from backend.services.job_manager import DebateJob, job_manager
+from models import DebateMessage, DebateStatus
+from services.job_manager import DebateJob, job_manager
 
 
 async def run_debate_job(job: DebateJob, api_key: str) -> None:
@@ -83,7 +83,8 @@ async def run_debate_job(job: DebateJob, api_key: str) -> None:
 
         character_builder = CharacterBuilder(
             ai_client=ai_client,
-            language=job.parameters.language
+            language=job.parameters.language,
+            use_cache=getattr(job.parameters, 'use_cache', True)  # Default: use cache
         )
 
         # Get style config
@@ -137,8 +138,35 @@ async def run_debate_job(job: DebateJob, api_key: str) -> None:
             topic=job.parameters.topic,
             language=job.parameters.language,
             rounds=job.parameters.rounds,
-            style_config=style_config
+            style_config=style_config,
+            enable_streaming=True  # Enable streaming for web UI
         )
+
+        # Get event loop reference for thread-safe callback
+        loop = asyncio.get_event_loop()
+
+        # Set up streaming callback to forward events to SSE
+        def stream_callback(event: dict):
+            """
+            Handle streaming events from debate engine.
+
+            Event types:
+            - partial_message: Token-by-token updates (many events per message)
+            - message: Complete message (one event per message)
+
+            IMPORTANT: This callback runs in a worker thread (via asyncio.to_thread),
+            so we must use run_coroutine_threadsafe to safely schedule coroutines.
+            """
+            try:
+                # Forward streaming event to SSE queue (thread-safe)
+                asyncio.run_coroutine_threadsafe(
+                    job.progress_queue.put(event),
+                    loop
+                )
+            except Exception as e:
+                print(f"Error in stream_callback: {e}")
+
+        debate_engine.set_stream_callback(stream_callback)
 
         # Step 5-7: Run Debate with progress callbacks
         # We'll update progress dynamically as the debate progresses
@@ -149,8 +177,8 @@ async def run_debate_job(job: DebateJob, api_key: str) -> None:
             """
             Callback function for debate engine to report progress.
 
-            This runs in a separate thread (from debate_engine), so we need to
-            use asyncio.run_coroutine_threadsafe to send progress updates.
+            IMPORTANT: This runs in a separate thread (from debate_engine), so we need to
+            use asyncio.run_coroutine_threadsafe to send progress updates safely.
             """
             try:
                 # Determine step number (5-7)
@@ -167,38 +195,32 @@ async def run_debate_job(job: DebateJob, api_key: str) -> None:
                     }
                 }
 
-                # Schedule the coroutine in the event loop
-                asyncio.create_task(job.progress_queue.put(progress_data))
+                # Schedule the coroutine in the event loop (thread-safe)
+                asyncio.run_coroutine_threadsafe(
+                    job.progress_queue.put(progress_data),
+                    loop
+                )
             except Exception as e:
                 print(f"Error in progress_callback: {e}")
 
         # Run the debate (this is blocking, so wrap in to_thread)
+        # Note: With streaming enabled, messages are sent in real-time via stream_callback
+        # We still need to collect them for the job's message list
         messages = await asyncio.to_thread(
             debate_engine.run_debate,
             progress_callback=progress_callback
         )
 
-        # Convert messages from src format to backend format and stream them
+        # Store messages in job (for later retrieval)
+        # Note: Messages are already streamed via SSE in real-time,
+        # this is just for persistent storage
         for src_msg in messages:
-            # Convert to backend DebateMessage format
             backend_msg = DebateMessage(
                 speaker=src_msg.speaker,
                 role=src_msg.role,
                 content=src_msg.content
             )
-
-            # Add to job's message list
             await job_manager.add_message(job.id, backend_msg)
-
-            # Stream message via SSE
-            await job.progress_queue.put({
-                "type": "message",
-                "data": {
-                    "speaker": backend_msg.speaker,
-                    "role": backend_msg.role,
-                    "content": backend_msg.content
-                }
-            })
 
         # Mark as completed
         await job_manager.update_job_status(job.id, DebateStatus.COMPLETED)

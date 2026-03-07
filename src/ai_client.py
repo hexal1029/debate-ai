@@ -4,7 +4,7 @@ AI客户端模块
 """
 
 import os
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Callable
 from anthropic import Anthropic, APIError, APIConnectionError
 
 
@@ -76,6 +76,70 @@ class AIClient:
             raise APIError(f"API调用错误：{str(e)}")
         except Exception as e:
             raise Exception(f"未知错误：{str(e)}")
+
+    def generate_text_stream(
+        self,
+        messages: List[Dict[str, str]],
+        system: Optional[str] = None,
+        max_tokens: int = 4096,
+        temperature: float = 1.0,
+        on_token: Optional[Callable[[str], None]] = None
+    ) -> str:
+        """
+        生成文本回复（支持流式输出）
+
+        与 generate_text 的区别：
+        - 支持 token-by-token streaming
+        - 通过 on_token 回调函数实时接收每个token
+        - 返回完整文本（与 generate_text 兼容）
+        - 如果streaming失败，自动降级到非streaming模式
+
+        Args:
+            messages: 对话消息列表，格式为[{"role": "user", "content": "..."}]
+            system: 系统提示词（角色设定）
+            max_tokens: 最大生成token数
+            temperature: 温度参数（0-1，越高越随机）
+            on_token: 可选的回调函数，每接收一个token时调用一次
+
+        Returns:
+            完整的生成文本内容
+
+        Raises:
+            APIError: API调用错误
+            APIConnectionError: 网络连接错误
+        """
+        try:
+            kwargs = {
+                "model": self.model,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "messages": messages,
+                "stream": True  # Enable streaming
+            }
+
+            if system:
+                kwargs["system"] = system
+
+            full_text = ""
+
+            # Use streaming context manager
+            with self.client.messages.stream(**kwargs) as stream:
+                for text in stream.text_stream:
+                    full_text += text
+                    # Call token callback if provided
+                    if on_token:
+                        try:
+                            on_token(text)
+                        except Exception as e:
+                            # Don't let callback errors break streaming
+                            print(f"⚠ Error in on_token callback: {e}")
+
+            return full_text
+
+        except Exception as e:
+            # Fallback to non-streaming if streaming fails
+            print(f"⚠ Streaming failed ({e}), falling back to non-streaming mode")
+            return self.generate_text(messages, system, max_tokens, temperature)
 
     def generate_character_profile(self, character_name: str, topic: str, language: str = "zh") -> str:
         """

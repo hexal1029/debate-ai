@@ -20,9 +20,10 @@ import { cn } from '@/lib/utils';
 interface MessageBubbleProps {
   message: DebateMessage;
   index: number;
+  isStreaming?: boolean;
 }
 
-export function MessageBubble({ message, index }: MessageBubbleProps) {
+export function MessageBubble({ message, index, isStreaming = false }: MessageBubbleProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -72,6 +73,11 @@ export function MessageBubble({ message, index }: MessageBubbleProps) {
         >
           {message.content}
         </ReactMarkdown>
+
+        {/* Blinking cursor for streaming messages */}
+        {isStreaming && (
+          <span className="inline-block w-0.5 h-5 bg-current ml-1 animate-pulse" />
+        )}
       </div>
     </div>
   );

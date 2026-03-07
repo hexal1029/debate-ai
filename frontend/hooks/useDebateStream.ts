@@ -24,9 +24,16 @@ interface UseDebateStreamOptions {
   onError?: (data: ErrorEvent) => void;
 }
 
+interface StreamingMessage {
+  speaker: string;
+  role: string;
+  content: string;
+}
+
 interface UseDebateStreamReturn {
   status: StreamStatus;
   messages: DebateMessage[];
+  streamingMessage: StreamingMessage | null;
   currentProgress: ProgressEvent | null;
   error: string | null;
 }
@@ -40,6 +47,7 @@ export function useDebateStream({
 }: UseDebateStreamOptions): UseDebateStreamReturn {
   const [status, setStatus] = useState<StreamStatus>('connecting');
   const [messages, setMessages] = useState<DebateMessage[]>([]);
+  const [streamingMessage, setStreamingMessage] = useState<StreamingMessage | null>(null);
   const [currentProgress, setCurrentProgress] = useState<ProgressEvent | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,7 +86,34 @@ export function useDebateStream({
       }
     });
 
-    // Message events
+    // Partial message events (streaming tokens)
+    eventSource.addEventListener('partial_message', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.is_complete) {
+          // Message complete - add to final list and clear streaming
+          const newMessage: DebateMessage = {
+            speaker: data.speaker,
+            role: data.role as any,
+            content: data.content,
+          };
+          setMessages((prev) => [...prev, newMessage]);
+          setStreamingMessage(null);
+        } else {
+          // Partial content - update streaming message
+          setStreamingMessage({
+            speaker: data.speaker,
+            role: data.role,
+            content: data.content,
+          });
+        }
+      } catch (err) {
+        console.error('Error parsing partial_message event:', err);
+      }
+    });
+
+    // Message events (complete messages - backwards compatibility)
     eventSource.addEventListener('message', (event) => {
       try {
         const data: MessageEvent = JSON.parse(event.data);
@@ -91,6 +126,7 @@ export function useDebateStream({
         };
 
         setMessages((prev) => [...prev, newMessage]);
+        setStreamingMessage(null); // Clear any streaming message
         onMessage?.(data);
       } catch (err) {
         console.error('Error parsing message event:', err);
@@ -147,6 +183,7 @@ export function useDebateStream({
   return {
     status,
     messages,
+    streamingMessage,
     currentProgress,
     error,
   };

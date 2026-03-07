@@ -10,8 +10,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-from backend.models import DebateMessage, CreateDebateRequest, DebateStatus
-from backend.services.job_manager import DebateJob, job_manager
+from models import DebateMessage, CreateDebateRequest, DebateStatus
+from services.job_manager import DebateJob, job_manager
 
 
 def parse_markdown_file(filepath: Path) -> Optional[dict]:

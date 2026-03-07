@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import Optional
 import os
 
-from backend.models import (
+from models import (
     CreateDebateRequest,
     CreateDebateResponse,
     DebateListResponse,
@@ -20,8 +20,8 @@ from backend.models import (
     DebateSummary,
     DebateStatus
 )
-from backend.services.job_manager import job_manager
-from backend.services.debate_service import start_debate
+from services.job_manager import job_manager
+from services.debate_service import start_debate
 
 
 router = APIRouter(prefix="/api/debates", tags=["debates"])

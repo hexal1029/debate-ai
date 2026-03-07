@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.style_config import STYLE_CONFIGS
 
-from backend.models import StylesResponse, StyleInfo
+from models import StylesResponse, StyleInfo
 
 
 router = APIRouter(prefix="/api/styles", tags=["styles"])

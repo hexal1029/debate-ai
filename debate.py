@@ -20,6 +20,7 @@ from src.ai_client import AIClient
 from src.character_builder import CharacterBuilder
 from src.debate_engine import DebateEngine
 from src.formatter import DebateFormatter
+from src.cache_manager import CharacterCacheManager
 
 
 def parse_arguments():
@@ -96,6 +97,16 @@ def parse_arguments():
         default="现代口语",
         help="语言风格（默认: 现代口语）。文言=完全古文；半文半白=文言+现代；现代口语=现代汉语但保持人物特点"
     )
+    parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="禁用角色缓存，强制重新研究角色（默认: 启用缓存）"
+    )
+    parser.add_argument(
+        "--clear-cache",
+        metavar="CHARACTER",
+        help="清除指定角色的缓存，然后退出。格式: \"角色名称\" 或 \"角色名称:语言\" (如: \"孔子:zh\")"
+    )
 
     return parser.parse_args()
 
@@ -107,6 +118,41 @@ def main():
 
     # 解析参数
     args = parse_arguments()
+
+    # Handle --clear-cache flag (exit after clearing)
+    if args.clear_cache:
+        cache_manager = CharacterCacheManager()
+
+        # Parse character name and language
+        if ":" in args.clear_cache:
+            character_name, language = args.clear_cache.split(":", 1)
+        else:
+            # Default to both languages
+            character_name = args.clear_cache
+            language = None
+
+        if language:
+            # Clear specific language
+            if cache_manager.invalidate(character_name, language):
+                print(f"✓ 已清除缓存: {character_name} ({language})")
+            else:
+                print(f"✗ 未找到缓存: {character_name} ({language})")
+        else:
+            # Clear both languages
+            cleared_zh = cache_manager.invalidate(character_name, "zh")
+            cleared_en = cache_manager.invalidate(character_name, "en")
+
+            if cleared_zh or cleared_en:
+                langs_cleared = []
+                if cleared_zh:
+                    langs_cleared.append("zh")
+                if cleared_en:
+                    langs_cleared.append("en")
+                print(f"✓ 已清除缓存: {character_name} ({', '.join(langs_cleared)})")
+            else:
+                print(f"✗ 未找到缓存: {character_name}")
+
+        sys.exit(0)
 
     # 打印欢迎信息
     print("\n" + "=" * 70)
@@ -143,7 +189,11 @@ def main():
         ai_client = AIClient(api_key=args.api_key)
 
         # 2. 构建角色
-        character_builder = CharacterBuilder(ai_client, language=args.lang)
+        character_builder = CharacterBuilder(
+            ai_client,
+            language=args.lang,
+            use_cache=not args.no_cache  # Enable cache unless --no-cache flag is set
+        )
 
         print(f"[2/7] 正在研究 {args.p1} 的背景和思想...")
         character1 = character_builder.build_character(args.p1, args.topic, style=args.style, language_style=args.language_style)

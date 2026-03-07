@@ -41,7 +41,8 @@ class DebateEngine:
         language: str = "zh",
         rounds: int = 5,
         style: str = "academic",
-        style_config = None
+        style_config = None,
+        enable_streaming: bool = False
     ):
         """
         初始化辩论引擎
@@ -55,6 +56,7 @@ class DebateEngine:
             rounds: 辩论轮数
             style: 辩论风格
             style_config: 可选的自定义风格配置（如果提供，优先使用）
+            enable_streaming: 是否启用流式输出（默认: False）
         """
         self.ai_client = ai_client
         self.character1 = character1
@@ -63,6 +65,7 @@ class DebateEngine:
         self.language = language
         self.rounds = rounds
         self.style = style
+        self.enable_streaming = enable_streaming
 
         # 如果提供了自定义配置，使用它；否则根据 style 获取默认配置
         if style_config:
@@ -79,6 +82,27 @@ class DebateEngine:
         # 为两个角色维护各自的对话历史
         self.character1_context: List[Dict[str, str]] = []
         self.character2_context: List[Dict[str, str]] = []
+
+        # Streaming callback (set by set_stream_callback)
+        self._stream_callback: Optional[Callable] = None
+
+    def set_stream_callback(self, callback: Callable):
+        """
+        设置流式输出回调函数
+
+        Args:
+            callback: 回调函数，接收事件字典作为参数
+                     事件格式: {
+                         "type": "partial_message" | "message",
+                         "data": {
+                             "speaker": str,
+                             "role": str,
+                             "content": str,
+                             "is_complete": bool
+                         }
+                     }
+        """
+        self._stream_callback = callback
 
     def run_debate(self, progress_callback: Optional[Callable[[str], None]] = None) -> List[DebateMessage]:
         """
@@ -214,7 +238,7 @@ class DebateEngine:
         return self.messages
 
     def _generate_moderator_opening(self) -> str:
-        """生成主持人开场白"""
+        """生成主持人开场白（支持流式输出）"""
         prompt = self.prompter.get_moderator_opening(
             character1_name=self.character1.name,
             character2_name=self.character2.name,
@@ -226,10 +250,50 @@ class DebateEngine:
         messages = [{"role": "user", "content": prompt}]
         # 主持人使用稍高的 max_tokens
         moderator_tokens = max(self.style_config.max_tokens * 2, 800)
-        return self.ai_client.generate_text(messages, max_tokens=moderator_tokens, temperature=0.8)
+
+        # Use streaming if enabled
+        if self.enable_streaming and self._stream_callback:
+            partial_content = [""]
+
+            def on_token(token: str):
+                partial_content[0] += token
+                try:
+                    self._stream_callback({
+                        "type": "partial_message",
+                        "data": {
+                            "speaker": "主持人" if self.language == "zh" else "Moderator",
+                            "role": "moderator",
+                            "content": partial_content[0],
+                            "is_complete": False
+                        }
+                    })
+                except:
+                    pass
+
+            response = self.ai_client.generate_text_stream(
+                messages, max_tokens=moderator_tokens, temperature=0.8, on_token=on_token
+            )
+
+            # Emit complete event
+            try:
+                self._stream_callback({
+                    "type": "message",
+                    "data": {
+                        "speaker": "主持人" if self.language == "zh" else "Moderator",
+                        "role": "moderator",
+                        "content": response,
+                        "is_complete": True
+                    }
+                })
+            except:
+                pass
+
+            return response
+        else:
+            return self.ai_client.generate_text(messages, max_tokens=moderator_tokens, temperature=0.8)
 
     def _generate_moderator_closing(self) -> str:
-        """生成主持人总结点评"""
+        """生成主持人总结点评（支持流式输出）"""
         # 获取辩论摘要（最近的几轮对话）
         recent_messages = self.messages[-10:] if len(self.messages) > 10 else self.messages
         debate_summary = "\n\n".join([
@@ -247,7 +311,47 @@ class DebateEngine:
         messages = [{"role": "user", "content": prompt}]
         # 主持人使用稍高的 max_tokens
         moderator_tokens = max(self.style_config.max_tokens * 2, 800)
-        return self.ai_client.generate_text(messages, max_tokens=moderator_tokens, temperature=0.8)
+
+        # Use streaming if enabled
+        if self.enable_streaming and self._stream_callback:
+            partial_content = [""]
+
+            def on_token(token: str):
+                partial_content[0] += token
+                try:
+                    self._stream_callback({
+                        "type": "partial_message",
+                        "data": {
+                            "speaker": "主持人" if self.language == "zh" else "Moderator",
+                            "role": "moderator",
+                            "content": partial_content[0],
+                            "is_complete": False
+                        }
+                    })
+                except:
+                    pass
+
+            response = self.ai_client.generate_text_stream(
+                messages, max_tokens=moderator_tokens, temperature=0.8, on_token=on_token
+            )
+
+            # Emit complete event
+            try:
+                self._stream_callback({
+                    "type": "message",
+                    "data": {
+                        "speaker": "主持人" if self.language == "zh" else "Moderator",
+                        "role": "moderator",
+                        "content": response,
+                        "is_complete": True
+                    }
+                })
+            except:
+                pass
+
+            return response
+        else:
+            return self.ai_client.generate_text(messages, max_tokens=moderator_tokens, temperature=0.8)
 
     def _generate_character_speech(
         self,
@@ -256,7 +360,7 @@ class DebateEngine:
         is_character1: bool
     ) -> str:
         """
-        生成角色发言
+        生成角色发言（支持流式输出）
 
         Args:
             character: 角色对象
@@ -272,13 +376,60 @@ class DebateEngine:
         # 添加新的user消息
         context.append({"role": "user", "content": prompt_content})
 
-        # 调用AI生成回复（使用风格配置的动态参数）
-        response = self.ai_client.generate_text(
-            messages=context,
-            system=character.system_prompt,
-            max_tokens=self.style_config.max_tokens,
-            temperature=self.style_config.temperature
-        )
+        # Prepare streaming callback if enabled
+        if self.enable_streaming and self._stream_callback:
+            # Use list to allow mutation in nested function
+            partial_content = [""]
+
+            def on_token(token: str):
+                """Token callback for streaming"""
+                partial_content[0] += token
+                # Emit partial message event
+                try:
+                    self._stream_callback({
+                        "type": "partial_message",
+                        "data": {
+                            "speaker": character.name,
+                            "role": "character1" if is_character1 else "character2",
+                            "content": partial_content[0],
+                            "is_complete": False
+                        }
+                    })
+                except Exception as e:
+                    # Don't let callback errors break generation
+                    print(f"⚠ Error in stream callback: {e}")
+
+            # Generate with streaming
+            response = self.ai_client.generate_text_stream(
+                messages=context,
+                system=character.system_prompt,
+                max_tokens=self.style_config.max_tokens,
+                temperature=self.style_config.temperature,
+                on_token=on_token
+            )
+
+            # Emit final complete message event
+            try:
+                self._stream_callback({
+                    "type": "message",
+                    "data": {
+                        "speaker": character.name,
+                        "role": "character1" if is_character1 else "character2",
+                        "content": response,
+                        "is_complete": True
+                    }
+                })
+            except Exception as e:
+                print(f"⚠ Error in stream callback: {e}")
+
+        else:
+            # Non-streaming mode (existing behavior)
+            response = self.ai_client.generate_text(
+                messages=context,
+                system=character.system_prompt,
+                max_tokens=self.style_config.max_tokens,
+                temperature=self.style_config.temperature
+            )
 
         # 将assistant回复也加入上下文
         context.append({"role": "assistant", "content": response})

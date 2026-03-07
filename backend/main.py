@@ -24,8 +24,8 @@ from contextlib import asynccontextmanager
 import os
 from dotenv import load_dotenv
 
-from backend.routes import debates, stream, styles
-from backend.services.job_manager import start_cleanup_task
+from routes import debates, stream, styles
+from services.job_manager import start_cleanup_task
 
 
 # Load environment variables from .env file
@@ -46,7 +46,7 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     import asyncio
-    from backend.services.import_legacy import load_legacy_debates_on_startup
+    from services.import_legacy import load_legacy_debates_on_startup
 
     # Load historical debates from outputs/
     print("Loading legacy debates from outputs/ directory...")
@@ -126,7 +126,7 @@ async def health_check():
     Returns:
         Health status and basic system information
     """
-    from backend.services.job_manager import job_manager
+    from services.job_manager import job_manager
 
     # Check if API key is configured
     api_key_configured = bool(os.getenv("ANTHROPIC_API_KEY"))

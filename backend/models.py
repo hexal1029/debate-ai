@@ -40,6 +40,10 @@ class CreateDebateRequest(BaseModel):
         default="现代口语",
         description="Language style for Chinese output"
     )
+    use_cache: bool = Field(
+        default=True,
+        description="Enable character profile caching (speeds up generation)"
+    )
 
     class Config:
         json_schema_extra = {

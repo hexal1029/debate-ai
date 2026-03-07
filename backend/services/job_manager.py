@@ -14,7 +14,7 @@ from typing import Dict, List, Optional
 from dataclasses import dataclass, field
 import time
 
-from backend.models import DebateStatus, CreateDebateRequest, DebateMessage
+from models import DebateStatus, CreateDebateRequest, DebateMessage
 
 
 @dataclass

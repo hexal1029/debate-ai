@@ -3,8 +3,9 @@
 负责动态研究历史人物并构建角色设定
 """
 
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional
 from .ai_client import AIClient
+from .cache_manager import CharacterCacheManager
 
 
 class Character:
@@ -30,25 +31,44 @@ class Character:
 class CharacterBuilder:
     """动态角色构建器"""
 
-    def __init__(self, ai_client: AIClient, language: str = "zh"):
+    def __init__(
+        self,
+        ai_client: AIClient,
+        language: str = "zh",
+        use_cache: bool = True,
+        cache_dir: Optional[str] = None
+    ):
         """
         初始化角色构建器
 
         Args:
             ai_client: AI客户端实例
             language: 输出语言
+            use_cache: 是否启用角色缓存（默认: True）
+            cache_dir: 缓存目录（可选，默认: cache/characters）
         """
         self.ai_client = ai_client
         self.language = language
+        self.use_cache = use_cache
+
+        # Initialize cache manager if caching is enabled
+        if self.use_cache:
+            self.cache_manager = CharacterCacheManager(
+                cache_dir=cache_dir if cache_dir else "cache/characters"
+            )
+        else:
+            self.cache_manager = None
 
     def build_character(self, character_name: str, topic: str, style: str = "academic", language_style: str = "现代口语") -> Character:
         """
         构建单个角色（核心功能）
 
         这个方法完全动态化：
-        1. 使用AI研究该人物的背景、思想、风格
-        2. 生成详细的角色profile
-        3. 将profile转化为system prompt（根据风格调整）
+        1. 尝试从缓存加载角色profile（如果启用缓存）
+        2. 如果缓存未命中，使用AI研究该人物的背景、思想、风格
+        3. 生成详细的角色profile
+        4. 将profile转化为system prompt（根据风格调整）
+        5. 保存profile到缓存（如果启用缓存）
 
         Args:
             character_name: 人物名称（任意字符串）
@@ -59,14 +79,40 @@ class CharacterBuilder:
         Returns:
             Character对象，包含完整的角色设定
         """
-        # 第一步：AI研究该人物，生成详细的profile
-        profile = self.ai_client.generate_character_profile(
-            character_name=character_name,
-            topic=topic,
-            language=self.language
-        )
+        profile = None
 
-        # 第二步：将profile转化为system prompt（传递风格和语言风格参数）
+        # Step 1: Try to get profile from cache
+        if self.cache_manager:
+            cached_profile = self.cache_manager.get(character_name, self.language)
+            if cached_profile:
+                profile = cached_profile
+                print(f"✓ 使用缓存的角色资料: {character_name}")
+
+        # Step 2: If cache miss, research from scratch
+        if profile is None:
+            if self.cache_manager:
+                print(f"⟳ 正在研究角色 {character_name}（缓存未命中，将保存到缓存）...")
+            else:
+                print(f"⟳ 正在研究角色 {character_name}（缓存已禁用）...")
+
+            profile = self.ai_client.generate_character_profile(
+                character_name=character_name,
+                topic=topic,
+                language=self.language
+            )
+
+            # Step 3: Save to cache
+            if self.cache_manager:
+                self.cache_manager.set(
+                    character_name=character_name,
+                    language=self.language,
+                    profile=profile,
+                    api_model=self.ai_client.model
+                )
+
+        # Step 4: Create system prompt (always done, even for cached profiles)
+        # This is because system prompt depends on topic, style, and language_style
+        # which can vary between debates with the same character
         system_prompt = self.ai_client.create_system_prompt(
             profile=profile,
             character_name=character_name,
@@ -76,7 +122,7 @@ class CharacterBuilder:
             language_style=language_style
         )
 
-        # 创建并返回Character对象
+        # Step 5: Create and return Character object
         return Character(
             name=character_name,
             profile=profile,

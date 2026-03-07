@@ -17,7 +17,7 @@ from sse_starlette.sse import EventSourceResponse
 import asyncio
 import json
 
-from backend.services.job_manager import job_manager
+from services.job_manager import job_manager
 
 
 router = APIRouter(prefix="/api/debates", tags=["streaming"])
